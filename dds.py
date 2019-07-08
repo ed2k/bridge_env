@@ -21,11 +21,12 @@ class Deal(Structure):
                 ("remainCards", c_uint * 4 * 4)]
 
     @classmethod
-    def from_deal(cls, deal, strain, leader):
+    def from_deal(cls, deal, strain, leader, ct=[[0,0,0],[0,0,0]]):
+        print(ct)
         self = cls(trump=strain,
                    first=leader,
-                   currentTrickSuit=(c_int * 3)(0, 0, 0),
-                   currentTrickRank=(c_int * 3)(0, 0, 0))
+                   currentTrickSuit=(c_int * 3)(ct[0][0],ct[0][1],ct[0][2]),
+                   currentTrickRank=(c_int * 3)(ct[1][0],ct[1][1],ct[1][2]))
         # bit #i (2 ≤ i ≤ 14) is set if card of rank i (A = 14) is held
         for seat in Seat:
             holding = np.zeros(4 ,dtype=np.int32)
@@ -72,6 +73,8 @@ class FutureTricks(Structure):
                 ("rank", c_int * 13),
                 ("equals", c_int * 13),
                 ("score", c_int * 13)]
+    def __str__(self):
+        return 'ftricks '+ str[self.score[0]]
 
 
 class solvedBoards(Structure):
@@ -103,8 +106,10 @@ SolveBoardStatus = {
          "maximum number of threads"}
 
 
-def _solve_board(deal, strain, leader, target, sol, mode):
-    c_deal = Deal.from_deal(deal, strain, leader)
+def _solve_board(deal, strain, leader, target, sol, mode, currentTricks=[[0,0,0],[0,0,0]]):
+    print(currentTricks)
+    c_deal = Deal.from_deal(deal, strain, leader, currentTricks)
+    print (c_deal.currentTrickSuit[0], c_deal.currentTrickRank[0])
     futp = FutureTricks()
     status = dll.SolveBoard(c_deal, target, sol, mode, byref(futp), 0)
     if status != 1:
